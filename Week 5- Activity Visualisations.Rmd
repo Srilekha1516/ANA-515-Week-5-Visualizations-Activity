@@ -1,0 +1,152 @@
+---
+title: "Week 5 - Visualizations Activity"
+author: "Srilekha Gurrapu"
+date: "2023-06-22"
+output:
+  word_document: default
+  html_document: default
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+## Description of the data
+
+The dataset I am using is the COVID-19 dataset, which provides comprehensive information about the COVID-19 pandemic across multiple countries. The data measures various aspects of the pandemic, including the number of cases, deaths, and recoveries. The dataset was collected from reliable sources such as national health agencies and international organizations tracking the pandemic.
+
+The data is saved in a CSV (Comma-Separated Values) format. It is a flat file that uses commas as the delimiter to separate the values in each row. The dataset is organized in a tabular format, where each row represents a specific observation (e.g., a specific country and date), and each column represents a variable or attribute related to that observation (e.g., cases, deaths, recoveries). The CSV format is a widely used and easily accessible format for storing structured data. It can be opened and processed using various tools and programming languages, including R, Python, and spreadsheet software.
+
+To read this data into R, I will use the **read_csv** function, which is a base R function specifically designed for reading CSV files. This function automatically handles the parsing of the CSV format, including the detection of the delimiter and the conversion of the data into appropriate data types. The resulting data will be stored in a dataframe, which is a common data structure in R for handling tabular data.
+
+
+## Reading the data into R
+
+In this code, I used the **read_csv()** function to read the data from the CSV file and assign it to the **data** dataframe object. The **read_csv()** function from the readr package is used to read the data from the zip file. The **read_csv()** function is designed to read CSV files and is a part of the readr package.
+
+The **unzip()** function is used to extract the file from the zip archive, and the extracted data is directly passed to the **read_csv()** function to read it as a CSV file.
+
+```{r Reading, include=FALSE}
+# Reading the data into R
+library(readr)
+
+# Specify the path to the zip file
+zip_file <- "E:/Data Analytics - Spring 2023/ANA 515 - Fundamentals of Data Storage/Week 3/Covid 19 dataset.zip"
+
+# Read the data from the zip file using read_csv()
+data <- read_csv(unzip(zip_file))
+```
+
+## Cleaning the data
+In the code chunk, I performed some basic data cleaning operations on the dataset.
+
+First, I renamed the columns of the dataframe using the **colnames** function. I provided a vector of new column names that correspond to the desired names for each column.
+
+Next, I converted the "Date" column to the "Date" format using the **as.Date** function. This ensures that the date values are treated as dates in R, allowing for easier manipulation and analysis.
+
+Finally, I subsetted the dataset to keep only the "Country", "Date", "Total_Cases", and "Total_Deaths" columns using indexing with square brackets ([]). This creates a new dataframe called **data_subset** that contains the selected columns.
+
+To verify the changes and check the cleaned dataset, I used the **head** function to display the first few rows of the **data_subset** dataframe.
+```{r Cleaning, echo=FALSE}
+# Cleaning the data
+# Rename columns
+colnames(data) <- c("Date", "Country/Region", "Confirmed", "Deaths", "Recovered", "Active", "New Cases", "New deaths", "New recovered", "WHO Region")
+
+library(dplyr)
+
+# Perform column renaming
+data <- data %>% 
+  rename(Date="Date", Country = "Country/Region", Total_Cases = "Confirmed", Total_Deaths = "Deaths", Total_Recoveries = "Recovered", Active_Cases = "Active", WHO_Region = "WHO Region")
+
+# Convert Date to Date format
+data$Date <- as.Date(data$Date)
+
+# Subset the dataset to keep at least 4 columns
+data_subset <- data[, c("Date", "Country", "Total_Cases", "Total_Deaths")]
+
+# View the cleaned dataset
+head(data_subset)
+```
+
+## Characteristics of Data
+```{r Characteristics, echo=FALSE}
+# Number of rows and columns
+num_rows <- nrow(data)
+num_cols <- ncol(data)
+
+library(knitr)
+
+# Define the column names and descriptions
+column_names <- c("Column Name", "Description")
+column_descriptions <- c(
+  "Date", "The date of the recorded data for COVID-19 cases.",
+  "Country", "The name of the country where the COVID-19 cases were reported.",
+  "Total_Cases", "The total number of confirmed COVID-19 cases in a specific country or region.",
+  "Total_Deaths", "The total number of deaths caused by COVID-19 in a specific country or region.",
+  "Total_Recoveries", "The total number of individuals who have recovered from COVID-19 in a specific country or region.",
+  "Active_Cases", "The number of active COVID-19 cases in a specific country or region.",
+  "New cases", "The number of new COVID-19 cases reported on a specific date.",
+  "New deaths", "The number of new deaths due to COVID-19 reported on a specific date.",
+  "New recovered", "The number of new recoveries from COVID-19 reported on a specific date.",
+  "WHO Region", "The World Health Organization (WHO) region to which the country or region belongs."
+)
+
+# Create a data frame with the column names and descriptions
+column_table <- data.frame(matrix(column_descriptions, ncol = 2, byrow = TRUE))
+colnames(column_table) <- column_names
+
+# Print the table using kable
+kable(column_table, format = "markdown")
+```
+#Inline code
+"This data set has `r num_rows` rows and `r num_cols` columns. The names of the columns and a brief description of each are in the table above."
+
+## Summary Statistics:
+```{r summary, echo=FALSE}
+# Select three columns
+selected_columns <- c("Total_Cases", "Total_Deaths", "Total_Recoveries")
+
+# Subset the data to include only the selected columns
+subset_data <- data[, selected_columns, drop = FALSE]
+
+# Calculate summary statistics
+min_values <- apply(subset_data, 2, min, na.rm = TRUE)
+max_values <- apply(subset_data, 2, max, na.rm = TRUE)
+mean_values <- apply(subset_data, 2, mean, na.rm = TRUE)
+num_missing <- colSums(is.na(subset_data))
+
+# Create a summary dataframe
+summary_data <- data.frame(Column = selected_columns, Minimum = min_values, Maximum = max_values, Mean = mean_values, Missing_Values = num_missing)
+
+# Print the summary dataframe
+summary_data
+```
+
+
+## Histogram of Total Deaths
+```{r histogram of Deaths, echo=FALSE}
+# Histogram of a numeric variable
+
+library(ggplot2)
+
+ggplot(data, aes(x = Total_Deaths)) +
+  geom_histogram(binwidth = 5000, fill = "steelblue", color = "white") +
+  labs(title = "Histogram of Total deaths", x = "Total_Deaths", y = "Frequency")
+```
+
+## Scatterplot of Total Cases and Total Deaths
+```{r Scatterplot of Total_Cases and Total_Deaths, echo=FALSE}
+ggplot(data, aes(x = Total_Cases, y = Total_Deaths)) +
+  geom_point(color = "steelblue") +
+  labs(title = "Scatterplot of Toatl cases and total deaths", x = "Total_Cases", y = "Total_Deaths")
+```
+
+## Bar graph 
+```{r bargraph, echo=FALSE}
+ggplot(data, aes(x = Date, y = Total_Cases)) +
+  geom_bar(stat = "identity", fill = "steelblue") +
+  labs(title = "Bar Chart of Total Cases by Country",
+       x = "Country",
+       y = "Total Cases") +
+  theme(axis.text.x = element_text(angle = 90, hjust = 1))
+```
